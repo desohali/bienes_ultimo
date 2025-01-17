@@ -381,6 +381,16 @@ function Registro() {
                       codigo: item?.codigo?.toString(),
                     }
                   })}
+                  renderOption={(props, option) => {
+                    return (
+                      <li {...props}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span>{option.label}</span>
+                          <span style={{ fontSize: '0.85em', color: '#666' }}>{`${option?.marca || ""} - ${option?.modelo || ""} - ${option?.serie || ""}`}</span>
+                        </div>
+                      </li>
+                    );
+                  }}
                   renderInput={(params) => <TextField key={params.id}  {...params} label="Seleccione código" />}
                 />
               </Grid>
