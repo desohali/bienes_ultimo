@@ -12,7 +12,7 @@ import { Chip, Divider, Button, ButtonGroup, Box, Grid, TextField, Accordion, Ac
 import Tooltip, { tooltipClasses } from '@mui/material/Tooltip';
 import CardBienes from './CardBienes'
 import Catalogo_Nacional from '../Catalogo_Nacional.json'; // Ruta relativa al archivo JSON
-import huarmaca from '../huarmaca_con_descripcion.json'; // Ruta relativa al archivo JSON
+import huarmaca from '../huarmaca_con_descripcion_correcta.json'; // Ruta relativa al archivo JSON
 
 
 import { useNavigate } from "react-router-dom";
