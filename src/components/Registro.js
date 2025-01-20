@@ -12,7 +12,7 @@ import { Chip, Divider, Button, ButtonGroup, Box, Grid, TextField, Accordion, Ac
 import Tooltip, { tooltipClasses } from '@mui/material/Tooltip';
 import CardBienes from './CardBienes'
 import Catalogo_Nacional from '../Catalogo_Nacional.json'; // Ruta relativa al archivo JSON
-import huarmaca from '../huarmaca.json'; // Ruta relativa al archivo JSON
+import huarmaca from '../huarmaca_con_descripcion.json'; // Ruta relativa al archivo JSON
 
 
 import { useNavigate } from "react-router-dom";
@@ -386,7 +386,9 @@ function Registro() {
                       <li {...props}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           <span>{option.label}</span>
-                          <span style={{ fontSize: '0.85em', color: '#666' }}>{`${option?.marca || ""} - ${option?.modelo || ""} - ${option?.serie || ""}`}</span>
+                          <span style={{ fontSize: '0.85em', color: '#666' }}>
+                            {`${option?.descripcion || "SIN DESCRIPCION"}`}
+                          </span>
                         </div>
                       </li>
                     );
