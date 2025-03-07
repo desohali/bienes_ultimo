@@ -24,7 +24,7 @@ export default function Reportes() {
     formData.append("fecha", fecha);
     formData.append("tipoReporte", age);
     formData.append("descargar", descargar);
-    const response = await fetch("https://yocreoquesipuedohacerlo.com/main/reporteDeBienes", {
+    const response = await fetch("https://rifas.desohali.com/main/reporteDeBienes", {
       method: "post",
       body: formData
     });

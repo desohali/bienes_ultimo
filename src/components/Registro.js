@@ -117,7 +117,7 @@ const listarEnventario = async (dni) => {
   const formData = new FormData();
   formData.append("inventariador", dni);
 
-  const response = await fetch("https://yocreoquesipuedohacerlo.com/main/listarEnventario", {
+  const response = await fetch("https://rifas.desohali.com/main/listarEnventario", {
     method: "post",
     body: formData
   });
@@ -253,7 +253,7 @@ function Registro() {
         }
 
         formData.append("inventariador", usuario?.dni);
-        const response = await fetch("https://yocreoquesipuedohacerlo.com/main/enventario", {
+        const response = await fetch("https://rifas.desohali.com/main/enventario", {
           method: "post",
           body: formData
         });
