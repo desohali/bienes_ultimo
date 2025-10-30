@@ -20,6 +20,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setUltimoBien, setUser } from '../features/userSlice';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { styled } from '@mui/material/styles';
+import { db } from '../db/db';
 
 const HtmlTooltip = styled(({ className, ...props }) => (
   <Tooltip {...props} placement="top" classes={{ popper: className }} />
@@ -61,13 +62,15 @@ const formikBasicInformationSchema = Yup.object().shape({
 
   estado: Yup.string().min(1, "estado es muy corto!").max(400, "estado es muy largo!").required("estado es requerido!"),
   observaciones: Yup.string().min(1, "observaciones es muy corto!").max(400, "observaciones es muy largo!"),
-  codigo: Yup.string().min(1, "codigo es muy corto!").max(400, "codigo es muy largo!").required("codigo es requerido!"),
+  // codigo: Yup.string().min(1, "codigo es muy corto!").max(400, "codigo es muy largo!").required("codigo es requerido!"),
+  codigoInterno: Yup.string().min(1, "codigo interno es muy corto!").max(400, "codigo interno es muy largo!").required("codigo interno es requerido!"),
+  codigoPatrimonial: Yup.string().min(1, "codigo patrimonial es muy corto!").max(400, "codigo patrimonial es muy largo!").required("codigo patrimonial es requerido!"),
 });
 
 const ordenDeBienes = [
   "_id",
-  "codigo",
-  /* "codigoCorrelativo", */
+  "codigoInterno",
+  "codigoPatrimonial",
   "numeroEtiqueta",
   "marca",
   "modelo",
@@ -117,7 +120,7 @@ const listarEnventario = async (dni) => {
   const formData = new FormData();
   formData.append("inventariador", dni);
 
-  const response = await fetch("https://rifas.desohali.com/main/listarEnventario", {
+  const response = await fetch("https://rifas.desohali.com/ultimo/listarEnventario", {
     method: "post",
     body: formData
   });
@@ -152,6 +155,23 @@ function Registro() {
   const dispatch = useDispatch();
 
   const { user: usuario, ultimoBien } = useSelector((state) => state.user);
+
+  const [bienes, setbienes] = React.useState([]);
+  const [value, setValue] = React.useState(null);
+  const [inputValue, setInputValue] = React.useState("");
+
+
+  React.useEffect(() => {
+    console.time('fetch');
+    fetch('BD_HAMMER.json')
+      .then(res => res.json())
+      .then(async data => {
+        console.timeEnd('fetch')
+        // Guardar en IndexedDB con Dexie o idb
+        // await db.bienes.bulkAdd(data);
+        setbienes(data);
+      });
+  }, []);
 
   const inputFileRef = React.useRef();
 
@@ -231,10 +251,12 @@ function Registro() {
       dimensiones: 'NO INDICA',
       estado: '',
       observaciones: '',
-      codigo: '',
+      codigoInterno: '',
+      codigoPatrimonial: '',
     },
     validationSchema: formikBasicInformationSchema,
     onSubmit: async (values) => {
+
       try {
 
         if (!usuario?.dni) {
@@ -253,7 +275,7 @@ function Registro() {
         }
 
         formData.append("inventariador", usuario?.dni);
-        const response = await fetch("https://rifas.desohali.com/main/enventario", {
+        const response = await fetch("https://rifas.desohali.com/ultimo/enventario", {
           method: "post",
           body: formData
         });
@@ -292,6 +314,23 @@ function Registro() {
       formikBasicInformation.setFieldValue(key, data[key] || "");
     }
   };
+
+
+  // 🔹 Filtrar coincidencias (useMemo evita recalcular innecesariamente)
+  const resultadosBienes = React.useMemo(() => {
+    if (!inputValue) {
+      // Mostrar primeros 100 al inicio
+      return []; // bienes.slice(0, 100);
+    }
+
+    const texto = inputValue.toLowerCase();
+
+    const coincidencias = bienes.filter((item) =>
+      item.codigoInterno?.toLowerCase().includes(texto)
+    );
+
+    return coincidencias.slice(0, 500); // máximo 100 resultados
+  }, [inputValue, bienes]);
 
 
   return (
@@ -334,7 +373,7 @@ function Registro() {
 
           <Grid item xs={12} sm={10} md={8} lg={6}>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={12} md={6} lg={6}>
+              {/* <Grid item xs={12} sm={12} md={6} lg={6}>
                 <Autocomplete
                   disablePortal
                   id="combo-box-demo"
@@ -343,24 +382,23 @@ function Registro() {
                   onChange={(event, newValue) => {
                     formikBasicInformation.resetForm();
                     formikBasicInformation.setFieldValue('codigo', newValue?.Codigo || "");
-                    /* if (newValue) {
-                      setcodigo(newValue?.Codigo);
-                    } else {
-                      setcodigo("");
-                    } */
                   }}
                   renderInput={(params) => <TextField {...params} label="Que bien desea registrar?" />}
                 />
-              </Grid>
-              <Grid item xs={12} sm={12} md={6} lg={6}>
+              </Grid> */}
+
+              <Grid item xs={12} sm={12} md={12} lg={12}>
                 <Autocomplete
                   disablePortal
                   id='new-codigo'
-                  getOptionLabel={(option) => option.label || ''}
+                  value={value}
+                  getOptionLabel={(option) => option.codigoInterno || ''}
                   onChange={(event, newValue) => {
+                    setValue(newValue);
                     console.log("newValue", newValue);
                     formikBasicInformation.resetForm();
-                    formikBasicInformation.setFieldValue('codigo', newValue?.key || "");
+                    formikBasicInformation.setFieldValue('codigoInterno', newValue?.codigoInterno || "");
+                    formikBasicInformation.setFieldValue('codigoPatrimonial', newValue?.codigoPatrimonial || "");
                     formikBasicInformation.setFieldValue('numeroEtiqueta', newValue?.numeroEtiqueta || "");
                     formikBasicInformation.setFieldValue('marca', newValue?.marca || "");
                     formikBasicInformation.setFieldValue('modelo', newValue?.modelo || "");
@@ -373,19 +411,17 @@ function Registro() {
                     formikBasicInformation.setFieldValue('dependencia', newValue?.dependencia || "");
 
                   }}
-                  options={huarmaca.map((item) => {
-                    return {
-                      ...item,
-                      key: item?.key?.toString(),
-                      label: item?.label?.toString(),
-                      codigo: item?.codigo?.toString(),
-                    }
-                  })}
+                  options={resultadosBienes}
+                  onInputChange={(_, value) => {
+                    setInputValue(value)
+                  }} // 🔹 Evento correcto
+                  noOptionsText="Sin resultados"
+                  filterOptions={(x) => x} // evita doble filtrado de MUI
                   renderOption={(props, option) => {
                     return (
                       <li {...props}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span>{option.label}</span>
+                          <span>{option.codigoInterno || ""}</span>
                           <span style={{ fontSize: '0.85em', color: '#666' }}>
                             {`${option?.descripcion || "SIN DESCRIPCION"}`}
                           </span>
@@ -393,7 +429,7 @@ function Registro() {
                       </li>
                     );
                   }}
-                  renderInput={(params) => <TextField key={params.id}  {...params} label="Seleccione código" />}
+                  renderInput={(params) => <TextField key={params.id}  {...params} label="Seleccione código interno" />}
                 />
               </Grid>
               <Grid item xs={12} sm={12} md={6} lg={6}>
@@ -402,14 +438,31 @@ function Registro() {
                   fullWidth
                   disabled
                   size="small"
-                  id='codigo'
-                  label='Código'
+                  id='codigoInterno'
+                  label='Código Interno'
                   variant='outlined'
                   sx={{ mb: 0.5 }}
-                  value={formikBasicInformation.values.codigo}
+                  value={formikBasicInformation.values.codigoInterno}
                   onChange={formikBasicInformation.handleChange}
-                  error={formikBasicInformation.touched.codigo && Boolean(formikBasicInformation.errors.codigo)}
-                  helperText={formikBasicInformation.touched.codigo && formikBasicInformation.errors.codigo}
+                  error={formikBasicInformation.touched.codigoInterno && Boolean(formikBasicInformation.errors.codigoInterno)}
+                  helperText={formikBasicInformation.touched.codigoInterno && formikBasicInformation.errors.codigoInterno}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={12} md={6} lg={6}>
+                <TextField
+                  inputProps={{ maxLength: 100 }}
+                  fullWidth
+                  disabled
+                  size="small"
+                  id='codigoPatrimonial'
+                  label='Código Patrimonial'
+                  variant='outlined'
+                  sx={{ mb: 0.5 }}
+                  value={formikBasicInformation.values.codigoPatrimonial}
+                  onChange={formikBasicInformation.handleChange}
+                  error={formikBasicInformation.touched.codigoPatrimonial && Boolean(formikBasicInformation.errors.codigoPatrimonial)}
+                  helperText={formikBasicInformation.touched.codigoPatrimonial && formikBasicInformation.errors.codigoPatrimonial}
                 />
               </Grid>
               {/* {formikBasicInformation.touched.codigo && formikBasicInformation.errors.codigo && <Grid item xs={12} sm={12} md={12} lg={12}>
@@ -495,7 +548,7 @@ function Registro() {
                   helperText={formikBasicInformation.touched.color && formikBasicInformation.errors.color}
                 />
               </Grid>
-              <Grid item xs={12} sm={12} md={6} lg={6}>
+              <Grid item xs={6} sm={6} md={6} lg={6}>
                 <TextField
                   inputProps={{ maxLength: 100 }}
                   fullWidth
@@ -587,7 +640,7 @@ function Registro() {
                 </Button>
                 <div style={{ width: "100%", textAlign: "center" }}><canvas id="canvasPerfil" height={0}></canvas></div>
               </Grid>
-              <Grid item xs={12} sm={12} md={6} lg={6} />
+
               <Grid item xs={12} sm={12} md={6} lg={6}>
 
                 <ButtonGroup style={{ width: "100%" }} variant="contained" aria-label="outlined primary button group">
@@ -599,6 +652,8 @@ function Registro() {
                     loadingPosition='start'
                     startIcon={<ReplayIcon />}
                     onClick={async () => {
+                      setInputValue("");
+                      setValue(null);
                       await formikBasicInformation.resetForm();
                       inputFileRef.current.value = '';
                       const canvas = document.getElementById("canvasPerfil");

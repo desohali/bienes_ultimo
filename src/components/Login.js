@@ -19,7 +19,7 @@ const autenticarInventariador = async ({ dni }) => {
   const formData = new FormData();
   formData.append("dni", dni);
 
-  const response = await fetch("https://rifas.desohali.com/main/autenticarInventariador", {
+  const response = await fetch("https://rifas.desohali.com/ultimo/autenticarInventariador", {
     method: "post",
     body: formData
   });
