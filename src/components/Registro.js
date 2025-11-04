@@ -36,6 +36,17 @@ const HtmlTooltip = styled(({ className, ...props }) => (
 
 const regex = /[a-zA-Z0-9]/;
 
+async function urlToBase64(url) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob); // convierte el blob en base64
+  });
+}
+
 const formikBasicInformationSchema = Yup.object().shape({
   // first part form
   _id: Yup.string(),
@@ -66,6 +77,15 @@ const formikBasicInformationSchema = Yup.object().shape({
   codigoInterno: Yup.string().min(1, "codigo interno es muy corto!").max(400, "codigo interno es muy largo!").required("codigo interno es requerido!"),
   codigoPatrimonial: Yup.string().min(1, "codigo patrimonial es muy corto!").max(400, "codigo patrimonial es muy largo!").required("codigo patrimonial es requerido!"),
 });
+
+async function existeImagen(url) {
+  try {
+    const res = await fetch(url, { method: "HEAD" });
+    return res.ok;
+  } catch {
+    return false; // por si hay error de red o timeout
+  }
+}
 
 const ordenDeBienes = [
   "_id",
@@ -131,6 +151,7 @@ const listarEnventario = async (dni) => {
 
   return { data, count };
 };
+const urlImages = "https://rifas.desohali.com/assets/images/bienes_ultimo/";
 
 const fetchListar = async (usuario) => {
   if (usuario) {
@@ -143,9 +164,18 @@ const fetchListar = async (usuario) => {
       }
       bienesMap.push(binesOrdenados);
     }
+    console.time('fetchListar');
+    const solo20Bines = bienesMap.slice(0, 20).map(bien => (urlImages + bien._id + ".png"));
+    // Ejecuta todas las peticiones en paralelo
+    const resultados = await Promise.all(solo20Bines.map(url => existeImagen(url)));
+    console.timeEnd('fetchListar');
+    return {
+      ...bienes,
+      data: bienesMap.map((bien, index) => ({
+        ...bien, imagen: resultados[index] ? urlImages + bien._id + ".png" : ""
 
-    return { ...bienes, data: bienesMap };
-
+      }))
+    };
   }
 };
 
@@ -207,6 +237,10 @@ function Registro() {
   // atajos de teclado
   React.useEffect(() => {
     const handleKeyPress = (event) => {
+      // Ignorar si el foco está en un input, textarea o select
+      const tag = event.target.tagName.toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") return;
+
       // Verifica si la tecla presionada es 'Ctrl + S'
       const keyPressed = event.key.toLowerCase();
       if (event.ctrlKey && event.altKey && keyPressed === 'g') {
@@ -256,7 +290,7 @@ function Registro() {
     },
     validationSchema: formikBasicInformationSchema,
     onSubmit: async (values) => {
-
+      
       try {
 
         if (!usuario?.dni) {
@@ -268,10 +302,15 @@ function Registro() {
         for (const key in values) {
           formData.append(key, values[key].toString())
         }
-        if (firstImage) {
-          // Obtener los datos de la imagen desde el canvas en formato base64
-          const imageDataURL = document.getElementById("canvasPerfil").toDataURL('image/png', 1);
-          formData.append("imagen", imageDataURL);
+        if (firstImage || values.imagen) {
+          if (firstImage) {
+            const imageDataURL = document.getElementById("canvasPerfil").toDataURL('image/png', 1);
+            formData.append("imagen", imageDataURL);
+          } else if (values.imagen) {
+            const base64 = await urlToBase64(values.imagen)
+            formData.append("imagen", base64);
+          }
+
         }
 
         formData.append("inventariador", usuario?.dni);
@@ -313,6 +352,8 @@ function Registro() {
     for (const key in data) {
       formikBasicInformation.setFieldValue(key, data[key] || "");
     }
+
+    console.log('formikBasicInformation.getValues', formikBasicInformation.values)
   };
 
 

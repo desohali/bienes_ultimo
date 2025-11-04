@@ -19,8 +19,20 @@ export default function MediaCard({ row, callback }) {
         {Object.entries(row).slice(1).map(([key, value]) => {
           return (
             <Typography variant="body2" color="text.secondary">
-              {`${key} : `}{key == "codigoCorrelativo" ?
-                <Chip label={value} color="success" variant="outlined" style={{ fontSize: "unset", height: "24px" }} /> :
+              {`${key} : `}{key == "imagen" ?
+                value ? (
+                  <Chip
+                    label="Ver imagen"
+                    color="primary"
+                    component="a"
+                    href={value}
+                    target="_blank"
+                    clickable
+                    sx={{ fontWeight: "bold" }}
+                  />
+                ) : (
+                  <Chip label="Sin imagen" color="error" />
+                ) :
                 value}
             </Typography>
           )
